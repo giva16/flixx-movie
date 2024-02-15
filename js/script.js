@@ -1,4 +1,7 @@
+const NUM_POPULAR_MOVIES = 8;
+
 //User Interface
+const cards = document.querySelectorAll('.card');
 
 // Router
 const global = {
@@ -8,7 +11,25 @@ const global = {
 // display popular movies on home page
 async function displayPopularMovies() {
   const results = await fetchAPIData('movie/popular');
-  console.log(typeof results.results);
+  const popularMovies = results.results.slice(0, NUM_POPULAR_MOVIES);
+  
+  for (let i = 0; i < NUM_POPULAR_MOVIES; i++){
+    updateDetails(cards[i], popularMovies[i]);
+  }
+}
+
+// Update the Image, title, and release date of each movie card
+function updateDetails(card, movie){
+  // Get UI
+  const cardTitle = card.querySelector('.card-title');
+  const cardReleaseDate = card.querySelector('p').querySelector('small');
+  
+  // convert date to dd/mm/yyyy
+  const [year, month, day] = movie.release_date.split('-');
+  const movieDate = `${day}/${month}/${year}`;
+
+  cardTitle.textContent = movie.title;
+  cardReleaseDate.textContent = `Release: ${movieDate}`;
 }
 
 // Fetch data from TMDB API
@@ -47,7 +68,7 @@ function init() {
   switch (global.currentPage) {
     case '/':
     case '/index.html':
-      console.log('Home');
+      displayPopularMovies();
       break;
     case '/shows.html':
       console.log('Shows');
@@ -64,7 +85,6 @@ function init() {
 
   }
   highlightActiveLink();
-  displayPopularMovies();
 }
 
 
