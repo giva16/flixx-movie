@@ -9,19 +9,15 @@ const global = {
   currentPage: window.location.pathname
 };
 
-// display popular movies on home page
-async function displayPopularMovies() {
-  const results = await fetchAPIData('movie/popular');
-  const moviesData = results.results;
-  
-  
-  moviesData.forEach(movie => {
-    const movieCard = createCard(movie.title, movie.release_date, movie.poster_path, movie.id);
-    popularDiv.appendChild(movieCard);
-  })
-}
 
 /*********************Utility Functions***************/
+
+// reformat release/air dates to dd/mm/yyyy
+const getDate = (date) => {
+  const [year, month, day] = date.split('-');
+
+  return `${day}/${month}/${year}`;
+}
 
 // Create cards to represent displayed movies or shows
 function createCard(title, date, imagePath, id) {
@@ -49,7 +45,7 @@ function createCardBody(title, date) {
   cardDate.classList.add('text-muted');
 
   cardTitle.textContent = title;
-  cardDate.textContent = date;
+  cardDate.textContent = `Release: ${getDate(date)}`;
 
   cardBody.appendChild(cardTitle);
   cardText.appendChild(cardDate);
@@ -77,21 +73,16 @@ function createPoster(imagePath, title, id){
   return link;
 }
 
-// Update the Image, title, and release date of each movie card
-function updateDetails(card, movie){
-  // Get UI
-  const cardTitle = card.querySelector('.card-title');
-  const cardReleaseDate = card.querySelector('p').querySelector('small');
-  const cardImage = card.querySelector('img');
+// display popular movies on home page
+async function displayPopularMovies() {
+  const results = await fetchAPIData('movie/popular');
+  const moviesData = results.results;
   
-  // convert date to dd/mm/yyyy
-  const [year, month, day] = movie.release_date.split('-');
-  const movieDate = `${day}/${month}/${year}`;
-
-  cardImage.setAttribute('src', `${API_URL}${movie.poster_path}`);
-  cardImage.setAttribute('alt', movie.title);
-  cardTitle.textContent = movie.title;
-  cardReleaseDate.textContent = `Release: ${movieDate}`;
+  // create a card for each movie and add it to DOM
+  moviesData.forEach(movie => {
+    const movieCard = createCard(movie.title, movie.release_date, movie.poster_path, movie.id);
+    popularDiv.appendChild(movieCard);
+  })
 }
 
 // Fetch data from TMDB API
