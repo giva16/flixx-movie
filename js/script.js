@@ -1,6 +1,3 @@
-const API_URL = 'https://api.themoviedb.org/3/'
-
-
 //User Interface
 const popularDiv = document.querySelector('.grid');
 
@@ -10,7 +7,7 @@ const global = {
 };
 
 
-/*********************Utility Functions***************/
+/**************FEATURE: DISPLAY POPULAR MOVIES AND SHOWS**********/
 
 // reformat release/air dates to dd/mm/yyyy
 const getDate = (date) => {
@@ -45,7 +42,9 @@ function createCardBody(title, date) {
   cardDate.classList.add('text-muted');
 
   cardTitle.textContent = title;
-  cardDate.textContent = `Release: ${getDate(date)}`;
+  cardDate.textContent = global.currentPage === '/shows.html'?
+                                                `Aired: ${getDate(date)}`:
+                                                `Release: ${getDate(date)}`
 
   cardBody.appendChild(cardTitle);
   cardText.appendChild(cardDate);
@@ -54,7 +53,7 @@ function createCardBody(title, date) {
   return cardBody;
 }
 
-// create the image link for a card
+// create the poster for a movie/show card
 function createPoster(imagePath, title, id){
   const link = document.createElement('a');
   const image = document.createElement('img');
@@ -73,7 +72,7 @@ function createPoster(imagePath, title, id){
   return link;
 }
 
-// display popular movies on home page
+// display 20 popular movies on home page
 async function displayPopularMovies() {
   const results = await fetchAPIData('movie/popular');
   const moviesData = results.results;
@@ -85,9 +84,31 @@ async function displayPopularMovies() {
   })
 }
 
+// display 20 popular tv shows on tv shows page
+async function displayPopularTvShows() {
+  const results = await fetchAPIData('tv/popular');
+  const tvData = results.results;
+  
+  // create a card for each movie and add it to DOM
+  tvData.forEach(tvShow => {
+    const tvShowCard = createCard(tvShow.original_name, 
+                                tvShow.first_air_date, 
+                                tvShow.poster_path, 
+                                tvShow.id);
+    popularDiv.appendChild(tvShowCard);
+  })
+}
+
+/******** UTILITY FUNCTIONS ********/
+
 // Fetch data from TMDB API
 async function fetchAPIData(endpoint) {
+  // ALWAYS STORE YOUR API KEY ON AN ENVIRONMENTAL VARIABLE
+  // AND MAKE YOUR REQUESTS FROM A SERVER TO AVOID SECURITY LEAKS
+  const API_URL = 'https://api.themoviedb.org/3/'
   const API_KEY = 'eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiI1MjUzMjZjNDYzYzNkOWI3NjRhOWNmYTQ0ODdmZjhlOSIsInN1YiI6IjY1Y2QyMmIyYzM5MjY2MDE2MmJmYzM3NyIsInNjb3BlcyI6WyJhcGlfcmVhZCJdLCJ2ZXJzaW9uIjoxfQ.0XW4IkrnSceIn4sIchYY4XX-0ie0hpPVC9HpwlyznhA';
+
+  showSpinner();
   const response = await fetch(`${API_URL}${endpoint}?language=en-US`, {
     method: 'GET',
     headers: {
@@ -98,7 +119,17 @@ async function fetchAPIData(endpoint) {
 
   const data = await response.json();
 
+  hideSpinner();
+
   return data;
+}
+
+function showSpinner() {
+  document.querySelector('.spinner').classList.add('show');
+}
+
+function hideSpinner() {
+  document.querySelector('.spinner').classList.remove('show');
 }
 
 // highlight active link
@@ -122,7 +153,7 @@ function init() {
       displayPopularMovies();
       break;
     case '/shows.html':
-      console.log('Shows');
+      displayPopularTvShows();
       break;
     case '/movie-details.html':
       console.log('Movie-details');
