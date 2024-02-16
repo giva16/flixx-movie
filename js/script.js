@@ -182,6 +182,7 @@ async function displayMovieDetails() {
   const lowerDetails = document.querySelector('.details-bottom');
 
   updateUpperDetails(upperDetails, movieDetails);
+  updateLowerDetails(lowerDetails, movieDetails);
   console.log(movieDetails);
 }
 
@@ -219,5 +220,26 @@ function updateGenresList(oldGenres, newGenres) {
     li.appendChild(text);
     parent.appendChild(li);
   });
+}
+
+function commaThousands(x) {
+  return x.toString().replace(/\B(?<!\.\d*)(?=(\d{3})+(?!\d))/g, ",");
+}
+
+function updateLowerDetails(lowerDetails, movieDetails) {
+  const infoList = lowerDetails.querySelector('ul');
+  const productionList = lowerDetails.querySelector('.list-group');
+  
+  infoList.innerHTML = `
+    <li><span class="text-secondary">Budget:</span> $${commaThousands(movieDetails.budget)}</li>
+    <li><span class="text-secondary">Revenue:</span> $${commaThousands(movieDetails.revenue)}</li>
+    <li><span class="text-secondary">Runtime:</span> ${movieDetails.runtime} minutes</li>
+    <li><span class="text-secondary">Status:</span> ${movieDetails.status}</li>`;
+  
+    productionList.textContent = '';
+    movieDetails.production_companies.forEach(company => {
+      productionList.textContent += `${company.name}, `;
+    });
+    productionList.textContent = productionList.textContent.slice(0, -2); // get rid of extra comma
 
 }
