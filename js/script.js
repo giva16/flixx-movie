@@ -37,6 +37,11 @@ function createImage(image, imagePath, title) {
   image.setAttribute('alt', title);
 }
 
+// put a comma on a number for every thousands
+const commaThousands = (x) => {
+  return x.toString().replace(/\B(?<!\.\d*)(?=(\d{3})+(?!\d))/g, ",");
+}
+
 // reformat release/air dates to dd/mm/yyyy
 const getDate = (date) => {
   const [year, month, day] = date.split('-');
@@ -78,7 +83,7 @@ function init() {
       displayMovieDetails();
       break;
     case '/tv-details.html':
-      console.log('Shows-details');
+      displayTVDetails();
       break;
     case '/search.html':
       console.log('Search Page');
@@ -173,39 +178,43 @@ async function displayPopularTvShows() {
   })
 }
 
-/******* FEATURE: SHOW MOVIE DETAILS*********/
+/******* FEATURE: DISPLAY MOVIE DETAILS*********/
 async function displayMovieDetails() {
   // gets movie id from URL search (minus the query prefix)
   const movieId = window.location.search.slice(2); 
-  const movieDetails = await fetchAPIData(`movie/${movieId}`);
+  const movie = await fetchAPIData(`movie/${movieId}`);
   const upperDetails = document.querySelector('.details-top');
   const lowerDetails = document.querySelector('.details-bottom');
 
-  updateUpperDetails(upperDetails, movieDetails);
-  updateLowerDetails(lowerDetails, movieDetails);
-  console.log(movieDetails);
+  updateUpperDetails(upperDetails, movie);
+  updateLowerDetails(lowerDetails, movie);
 }
 
 // Update the Image, title, rating, date, description, and Genre to match queried movie
-function updateUpperDetails(upperDetails, movieDetails) {
+function updateUpperDetails(upperDetails, movie) {
   const image = upperDetails.querySelector('img');
   const title = upperDetails.querySelector('h2');
   const rating = upperDetails.querySelector('p');
   const date = upperDetails.querySelector('p.text-muted');
   const overview = upperDetails.querySelector('p.overview');
   const genres = upperDetails.querySelectorAll('li');
-  updateGenresList(genres, movieDetails.genres);
+  const homepageBtn = upperDetails.querySelector('.btn');
 
-  createImage(image, movieDetails.poster_path, movieDetails.title);
-  title.textContent = movieDetails.title;
-  date.textContent = `Release Date: ${getDate(movieDetails.release_date)}`;
-  overview.textContent = movieDetails.overview;
+  createImage(image, movie.poster_path, movie.title);
+  title.textContent = movie.title;
+  date.textContent = `Release Date: ${getDate(movie.release_date)}`;
+  overview.textContent = movie.overview;
   rating.innerHTML = `<p>
                         <i class="fas fa-star text-primary"></i>
-                        ${Math.round(movieDetails.vote_average * 10) / 10} / 10
+                        ${movie.vote_average.toFixed(1)} / 10
                       </p>`;
+
+  updateGenresList(genres, movie.genres);
+
+  homepageBtn.setAttribute('href', movie.homepage);
 }
 
+// updates the genre list on the upper details section
 function updateGenresList(oldGenres, newGenres) {
   const parent = oldGenres[0].parentElement;
 
@@ -222,24 +231,74 @@ function updateGenresList(oldGenres, newGenres) {
   });
 }
 
-function commaThousands(x) {
-  return x.toString().replace(/\B(?<!\.\d*)(?=(\d{3})+(?!\d))/g, ",");
-}
 
-function updateLowerDetails(lowerDetails, movieDetails) {
+function updateLowerDetails(lowerDetails, details) {
   const infoList = lowerDetails.querySelector('ul');
   const productionList = lowerDetails.querySelector('.list-group');
   
-  infoList.innerHTML = `
-    <li><span class="text-secondary">Budget:</span> $${commaThousands(movieDetails.budget)}</li>
-    <li><span class="text-secondary">Revenue:</span> $${commaThousands(movieDetails.revenue)}</li>
-    <li><span class="text-secondary">Runtime:</span> ${movieDetails.runtime} minutes</li>
-    <li><span class="text-secondary">Status:</span> ${movieDetails.status}</li>`;
+  infoList.innerHTML = global.currentPage === '/movie-details.html' ?
+    `<li><span class="text-secondary">Budget:</span> $${commaThousands(details.budget)}</li>
+    <li><span class="text-secondary">Revenue:</span> $${commaThousands(details.revenue)}</li>
+    <li><span class="text-secondary">Runtime:</span> ${details.runtime} minutes</li>
+    <li><span class="text-secondary">Status:</span> ${details.status}</li>`:
+
+    `<li><span class="text-secondary">Number Of Episodes:</span>${detail}</li>
+    <li>
+      <span class="text-secondary">Last Episode To Air:</span> Last
+      Aired Show Episode
+    </li>
+    <li><span class="text-secondary">Status:</span> Released</li>`
   
     productionList.textContent = '';
-    movieDetails.production_companies.forEach(company => {
+    details.production_companies.forEach(company => {
       productionList.textContent += `${company.name}, `;
     });
     productionList.textContent = productionList.textContent.slice(0, -2); // get rid of extra comma
 
+}
+
+/*********** FEATURE: SHOW TV DETAILS *******/
+async function displayTVDetails() {
+  const tvShowId = window.location.search.slice(2);
+  const tvShow = await fetchAPIData(`tv/${tvShowId}`);
+  const poster_path = `https://image.tmdb.org/t/p/w500/${tvShow.poster_path}`;
+  const div = document.createElement('div');
+
+  div.innerHTML = `
+    <div class="details-top">
+      <div>
+        <img
+          src=${poster_path}
+          class="card-img-top"
+          alt="${tvShow.name}"
+        />
+      </div>
+      <div>
+        <h2>${tvShow.name}</h2>
+        <p>
+          <i class="fas fa-star text-primary"></i>
+          ${tvShow.vote_average.toFixed(1)}
+        </p>
+        <p class="text-muted">Release Date: ${getDate(tvShow.first_air_date)}</p>
+        <p class="overview">${tvShow.overview}</p>
+        <h5>Genres</h5>
+        <ul class="list-group">
+          ${tvShow.genres.map(genre => `<li>${genre.name}</li>`).join('')}
+        </ul>
+        <a href="${tvShow.homepage}" target="_blank" class="btn">Visit Show Homepage</a>
+      </div>
+    </div>
+    <div class="details-bottom">
+      <h2>Show Info</h2>
+      <ul>
+        <li><span class="text-secondary">Number Of Episodes:</span> ${tvShow.number_of_episodes}</li>
+        <li>
+          <span class="text-secondary">Last Episode To Air:</span> ${tvShow.last_episode_to_air.name}
+        </li>
+        <li><span class="text-secondary">Status:</span> ${tvShow.status}</li>
+      </ul>
+      <h4>Production Companies</h4>
+      <div class="list-group">${tvShow.production_companies.map(company => company.name)}</div>
+    </div>`
+    document.getElementById('show-details').appendChild(div);
 }
