@@ -82,7 +82,7 @@ function highlightActiveLink() {
 }
 
 // Show alert
-function showAlert(message, className) {
+function showAlert(message, className='error') {
   const alertEl = document.createElement('div');
   alertEl.classList.add('alert', className);
   alertEl.appendChild(document.createTextNode(message));
@@ -294,11 +294,9 @@ async function displayTVDetails() {
   div.innerHTML = `
     <div class="details-top">
       <div>
-        <img
-          src=${poster_path}
-          class="card-img-top"
-          alt="${tvShow.name}"
-        />
+        ${tvShow.poster_path ?
+        `<img src="${poster_path}" class="card-img-top" alt="${tvShow.name}" />`:
+        `<img src="./images/no-image.jpg" class="card-img-top" alt="${tvShow.name}"/>`}
       </div>
       <div>
         <h2>${tvShow.name}</h2>
@@ -361,27 +359,45 @@ async function search() {
 
   if (global.search.term !== '' && global.search.term !== null) {
     // @todo - request from API and display results
-    const {results} = await searchAPIData();
-    console.log(results);
+    const {results, total_pages, page} = await searchAPIData();
+    
+    if (results.length === 0) {
+      showAlert('No Results Found');
+    } else {
+      showAlert('Please enter a search term', 'success');
+    }
+
     results.forEach(result => {
       const div = document.createElement('div');
       const poster_path = `https://image.tmdb.org/t/p/w500/${result.poster_path}`
+      const name = global.search.type === 'movie' ? 
+                   result.title :
+                   result.name;
+      const date = global.search.type === 'movie' ?
+                   result.release_date :
+                   result.first_air_date;
+                
+      const detailsPage = `${global.search.type}-details.html?=${result.id}`;
+      
+      
       div.classList.add('card');
       div.innerHTML = `
-      <a href="#">
-        <img src="${poster_path}" class="card-img-top" alt="" />
-      </a>
-      <div class="card-body">
-        <h5 class="card-title">Movie Or Show Name</h5>
-        <p class="card-text">
-          <small class="text-muted">Release: XX/XX/XXXX</small>
-        </p>
-      </div>`
-
-
-    })
+        <a href="${detailsPage}">
+          ${result.poster_path ?
+          `<img src="${poster_path}" class="card-img-top" alt="${name}" />`:
+          `<img src="./images/no-image.jpg" class="card-img-top" alt="${name}"/>`}
+        </a>
+        <div class="card-body">
+          <h5 class="card-title">${name}</h5>
+          <p class="card-text">
+            <small class="text-muted">Release: ${getDate(date)}</small>
+          </p>
+        </div>`
+      
+      document.getElementById('search-results').appendChild(div);
+    });
   } else {
-    showAlert('Please enter a search term')
+    showAlert('Please enter a search term');
   }
 }
 
