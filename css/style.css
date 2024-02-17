@@ -322,6 +322,12 @@ section h2 {
   margin-top: 20px;
 }
 
+.inactive {
+  position: absolute;
+  top: -9999px;
+  right: -9999px;
+}
+
 .page-counter {
   margin-top: 10px;
 }
