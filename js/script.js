@@ -12,7 +12,10 @@ const global = {
     term: '',
     type: '',
     page: 1,
-    totalPages: 1
+    total_pages: 1,
+    total_results: 0,
+    results_accumulator: 0,
+    prev_results_count: 0
   },
   api: {
     url: 'https://api.themoviedb.org/3/',
@@ -359,55 +362,77 @@ async function search() {
 
   if (global.search.term !== '' && global.search.term !== null) {
     // @todo - request from API and display results
-    const {results, total_pages, page} = await searchAPIData();
+    const {results, total_pages, page, total_results} = await searchAPIData();
     
+    global.search.page = page;
+    global.search.total_pages = total_pages;
+    global.search.total_results = total_results;
+
     if (results.length === 0) {
       showAlert('No Results Found');
     } else {
       showAlert('Please enter a search term', 'success');
     }
-
-    results.forEach(result => {
-      const div = document.createElement('div');
-      const poster_path = `https://image.tmdb.org/t/p/w500/${result.poster_path}`
-      const name = global.search.type === 'movie' ? 
-                   result.title :
-                   result.name;
-      const date = global.search.type === 'movie' ?
-                   result.release_date :
-                   result.first_air_date;
-                
-      const detailsPage = `${global.search.type}-details.html?=${result.id}`;
-      
-      
-      div.classList.add('card');
-      div.innerHTML = `
-        <a href="${detailsPage}">
-          ${result.poster_path ?
-          `<img src="${poster_path}" class="card-img-top" alt="${name}" />`:
-          `<img src="./images/no-image.jpg" class="card-img-top" alt="${name}"/>`}
-        </a>
-        <div class="card-body">
-          <h5 class="card-title">${name}</h5>
-          <p class="card-text">
-            <small class="text-muted">Release: ${getDate(date)}</small>
-          </p>
-        </div>`
-      
-      document.getElementById('search-results').appendChild(div);
-    });
+    displaySearchResults(results);
   } else {
-    showAlert('Please enter a search term');
+      showAlert('Please enter a search term');
   }
 }
 
-/// make API request to search
+function displaySearchResults(results) {
+  // Clear previous results
+  document.getElementById('search-results').innerText='';
+  document.getElementById('pagination').innerText='';
+  document.getElementById('search-results-heading').innerText='';
+
+  results.forEach(result => {
+    const div = document.createElement('div');
+    const poster_path = `https://image.tmdb.org/t/p/w500/${result.poster_path}`
+    const name = global.search.type === 'movie' ? 
+                 result.title :
+                 result.name;
+    const date = global.search.type === 'movie' ?
+                 result.release_date :
+                 result.first_air_date;            
+    const detailsPage = `${global.search.type}-details.html?=${result.id}`;
+    
+    div.classList.add('card');
+    div.innerHTML = `
+      <a href="${detailsPage}">
+        ${result.poster_path ?
+        `<img src="${poster_path}" class="card-img-top" alt="${name}" />`:
+        `<img src="./images/no-image.jpg" class="card-img-top" alt="${name}"/>`}
+      </a>
+      <div class="card-body">
+        <h5 class="card-title">${name}</h5>
+        <p class="card-text">
+          <small class="text-muted">Release: ${getDate(date)}</small>
+        </p>
+      </div>`
+    document.getElementById('search-results').appendChild(div);
+  });
+
+  // update search results accumulator for search result heading
+  if (global.search.results_accumulator === 0) {
+    global.search.results_accumulator += results.length;
+  }
+
+  document.getElementById('search-results-heading').innerHTML = `
+    <h2>${global.search.results_accumulator} of ${global.search.total_results} results for "${global.search.term}"</h2>`
+
+  // store the length of previous results for pagination;
+  global.search.prev_results_count = results.length;
+
+  displayPagination()
+} 
+
+// make API request to search
 async function searchAPIData() {
   const API_URL = global.api.url;
   const API_KEY = global.api.key;
 
   const response = await fetch(
-    `${API_URL}/search/${global.search.type}?query=${global.search.term}&include_adult=false&language=en-US&page=1`, 
+    `${API_URL}/search/${global.search.type}?query=${global.search.term}&include_adult=false&language=en-US&page=${global.search.page}`, 
     {
       method: 'GET',
       headers: {
@@ -420,6 +445,46 @@ async function searchAPIData() {
   return data;
 }
 
+// Create and Display pagination for search results
+function displayPagination() {
+  const div = document.createElement('div');
+  div.classList.add('pagination');
+  div.innerHTML = `
+    <button class="btn btn-primary" id="prev">Prev</button>
+    <button class="btn btn-primary" id="next">Next</button>
+    <div class="page-counter">Page ${global.search.page} of ${global.search.total_pages}</div>`;
+  
+  document.getElementById('pagination').appendChild(div);
+
+  const nextBtn = document.getElementById('next');
+  const prevBtn = document.getElementById('prev');
+
+  // disable prev on first page
+  if (global.search.page === 1) {
+    prevBtn.disabled = true;
+  }
+
+  // disable next on last page
+  if (global.search.page === global.search.total_pages) {
+    nextBtn.disabled = true;
+  }
+
+  // Next page
+  nextBtn.addEventListener('click', async () => {
+    global.search.page++;
+    const {results, total_pages} = await searchAPIData();
+    global.search.results_accumulator += results.length;
+    displaySearchResults(results);
+  }) ;
+
+  // Previous PAge
+  prevBtn.addEventListener('click', async () => {
+    global.search.page--;
+    const {results, total_pages} = await searchAPIData();
+    global.search.results_accumulator -= global.search.prev_results_count;
+    console.log(global.search.results_accumulator);
+  }) 
+} 
 /*********FEATURE: DISPLAY MOVIE SLIDER *************/
 async function displaySlider() {
   const {results} = await fetchAPIData('movie/now_playing');
