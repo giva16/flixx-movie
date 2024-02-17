@@ -482,7 +482,7 @@ function displayPagination() {
     global.search.page--;
     const {results, total_pages} = await searchAPIData();
     global.search.results_accumulator -= global.search.prev_results_count;
-    console.log(global.search.results_accumulator);
+    displaySearchResults(results);
   }) 
 } 
 /*********FEATURE: DISPLAY MOVIE SLIDER *************/
