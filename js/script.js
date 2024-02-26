@@ -103,15 +103,23 @@ function init() {
       displayPopularMovies();
       displaySlider();
       break;
+    case '/shows':
+    case 'shows':
     case '/shows.html':
       displayPopularTvShows();
       break;
+    case '/movie-details':
+    case 'movie-details':
     case '/movie-details.html':
       displayMovieDetails();
       break;
+    case '/tv-details':
+    case 'tv-details':
     case '/tv-details.html':
       displayTVDetails();
       break;
+    case '/search':
+    case 'search':
     case '/search.html':
       search();
       break;
@@ -529,5 +537,3 @@ function initSwiper() {
     }
   })
 }
-
-init();
