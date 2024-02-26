@@ -529,3 +529,5 @@ function initSwiper() {
     }
   })
 }
+
+init();
