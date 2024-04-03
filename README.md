@@ -1,6 +1,6 @@
 # Flixx Movies and Tv Series Application
 
-👉 [View a live demo here](https://lighthearted-palmier-7f0034.netlify.app/)
+👉 [View a live demo here](https://giva16-flixx-movie.netlify.app/)
 
 ## What is this app?
 
